@@ -27,8 +27,9 @@
       </div>
     </div>
 
+    <script src="configuration.js"></script>
     <script>
-      let host = "http://localhost:8080";
+      let host = getHost();
       const urlParams = new URLSearchParams(window.location.search);
       const id = urlParams.get("id");
       let quiz = null;
@@ -42,7 +43,14 @@
       startTheQuiz();
 
       async function startTheQuiz() {
-        let response = await fetch(host + "/quizzes/" + id);
+        let headers = {
+          "Authorization": `Bearer ${configuration.token()}`
+        };
+        let response = await fetch(host + "/quizzes/" + id, {headers: headers});
+        if (response.status === 401) {
+            alert("Unauthorized");
+            logout();
+        }
         quiz = await response.json();
         await displayTheQuestion(0);
       }
@@ -114,7 +122,7 @@
         let div = document.createElement("div");
         div.className = "card";        
         let innerHtml = `
-         <img src="http://localhost:8080/questions/${question.id}/image" alt="question" style="width:100%">
+         <img src="${URL.createObjectURL(await getTheImage(question.id))}" alt="question" style="width:100%">
          <div class="container">
            <h4><b>${question.id}</b></h4>
            <p>${question.description}</p>
@@ -133,6 +141,16 @@
         div.innerHTML = innerHtml;
         item.appendChild(div);
       }
+
+      async function getTheImage(questionId) {
+        headers = {
+          "Authorization": `Bearer ${configuration.token()}`
+        };
+        let response = await fetch(host + "/questions/" + questionId + "/image", { headers });
+        let result = await response.blob();
+        return result;
+      }
+      
     </script>
   </body>
 </html>
